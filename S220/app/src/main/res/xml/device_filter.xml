@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- FTDI FT232R / FT232RL -->
+    <usb-device vendor-id="1027" product-id="24577" />
+    <!-- FTDI その他の FTDI チップ (FT2232, FT4232 等) -->
+    <usb-device vendor-id="1027" />
+</resources>

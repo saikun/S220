@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- アンテナと電波のアイコン -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2a1,1 0,0 1,1 1v15.17l2.59,-2.58a1,1 0,0 1,1.41 1.41l-4.3,4.29a1,1 0,0 1,-1.4 0l-4.3,-4.29a1,1 0,1 1,1.41,-1.41L11,18.17V3a1,1 0,0 1,1 -1zM4.93,6.93a1,1 0,0 1,1.41 0,9.97 9.97,0 0,1 11.32,0 1,1 0,1 1,-1.2 1.6,7.97 7.97,0 0,0 -8.92,0 1,1 0,0 1,-1.41 -0.2zM2.1,4.1a1,1 0,0 1,1.41 0,13.96 13.96,0 0,1 16.98,0 1,1 0,0 1,-1.24 1.57,11.96 11.96,0 0,0 -14.5,0 1,1 0,0 1,-1.41 -0.16z" />
+</vector>

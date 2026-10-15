@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rowRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="6dp"
+    android:paddingTop="5dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="5dp"
+    android:background="@color/bg"
+    android:baselineAligned="false">
+
+    <!-- 1. ローカル時間 -->
+    <TextView
+        android:id="@+id/tvTime"
+        android:layout_width="66dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp"
+        android:maxLines="2"
+        android:text="12:34:56.789" />
+
+    <!-- 縦区切り線 -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="6dp"
+        android:background="@color/outline" />
+
+    <!-- 2. 受信したBody -->
+    <TextView
+        android:id="@+id/tvBody"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="monospace"
+        android:textColor="@color/text_primary"
+        android:textSize="12sp"
+        android:lineSpacingExtra="1dp"
+        android:text="SEQ=000001,MSG=Hello LoRa" />
+
+    <!-- 縦区切り線 -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="4dp"
+        android:background="@color/outline" />
+
+    <!-- 3. RSSI -->
+    <LinearLayout
+        android:layout_width="54dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/tvRssi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:textColor="@color/accent"
+            android:textSize="11sp"
+            android:text="-75dBm" />
+
+        <TextView
+            android:id="@+id/tvNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_dim"
+            android:textSize="9sp"
+            android:text="ソ5" />
+    </LinearLayout>
+
+    <!-- 縦区切り線 -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="6dp"
+        android:background="@color/outline" />
+
+    <!-- 4. 現在の位置情報 -->
+    <TextView
+        android:id="@+id/tvLocation"
+        android:layout_width="78dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:textColor="@color/text_secondary"
+        android:textSize="10sp"
+        android:maxLines="2"
+        android:gravity="end"
+        android:text="35.681234\n139.767123" />
+
+</LinearLayout>

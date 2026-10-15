@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">S220</string>
+    <string name="title_main">S220 RX Logger</string>
+
+    <string name="col_time">TIME</string>
+    <string name="col_body">BODY</string>
+    <string name="col_rssi">RSSI</string>
+    <string name="col_loc">LOCATION</string>
+
+    <string name="stat_rx">受信</string>
+    <string name="stat_lost">欠落</string>
+    <string name="stat_min">MIN</string>
+    <string name="stat_avg">AVG</string>
+    <string name="stat_max">MAX</string>
+    <string name="stat_gpx">GPX点</string>
+    <string name="rssi_unit">dBm</string>
+    <string name="rssi_none">---</string>
+    <string name="follow_latest">最新へ</string>
+    <string name="empty_hint">受信待機中…\nFT232RL + E220 を USB 接続してください</string>
+
+    <string name="menu_sound">音を鳴らす</string>
+    <string name="menu_keep_screen">画面を常にON</string>
+    <string name="menu_reconnect">USB 再接続</string>
+    <string name="menu_clear">画面をクリア</string>
+    <string name="menu_files">保存先を表示</string>
+    <string name="menu_stop">停止して終了</string>
+
+    <string name="storage_title">ログの保存先を選択</string>
+    <string name="storage_internal">端末（内部ストレージ）</string>
+    <string name="storage_sd">SDカード</string>
+    <string name="storage_sd_missing">SDカード（未挿入）</string>
+    <string name="exit">終了</string>
+</resources>

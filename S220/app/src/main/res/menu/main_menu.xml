@@ -5,11 +5,17 @@
         android:id="@+id/menu_start"
         android:title="@string/menu_start"
         android:visible="false" />
+    <!-- 受信モードのみ表示 -->
     <item
         android:id="@+id/menu_sound"
         android:checkable="true"
         android:checked="true"
         android:title="@string/menu_sound" />
+    <!-- 送信モードで稼働中のみ表示 -->
+    <item
+        android:id="@+id/menu_interval"
+        android:title="@string/menu_interval"
+        android:visible="false" />
     <item
         android:id="@+id/menu_keep_screen"
         android:checkable="true"

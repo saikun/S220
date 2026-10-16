@@ -2,27 +2,35 @@ package com.example.s220
 
 import android.os.Handler
 import android.os.Looper
+import com.example.s220.core.AppMode
 import com.example.s220.model.LogEntry
 
 /**
- * バックグラウンド (RxService) と画面 (MainActivity) の橋渡し。
+ * バックグラウンド (LoggerService) と画面 (MainActivity) の橋渡し。
  *
  * rx_app.py の ConsolePresenter に相当する通知先。
  * どのスレッドから post しても、リスナーへの通知と内部状態の更新はメインスレッドで行う。
  * Activity が破棄されていても直近 [MAX_ENTRIES] 行は保持しているので、再表示時に復元できる。
  */
-object RxHub {
+object LoggerHub {
     const val MAX_ENTRIES = 2000
 
     /** 画面上部に出すステータス */
     data class Status(
         val running: Boolean = false,
+        /** 稼働中のモード（未開始なら null） */
+        val mode: AppMode? = null,
         val usbConnected: Boolean = false,
         val usbText: String = "USB: 未接続",
         val gpsOk: Boolean = false,
         val gpsText: String = "GPS: ---",
+        /** RX: 受信件数 / TX: 送信件数 */
         val total: Int = 0,
         val lost: Int = 0,
+        /** TX: 送信失敗件数 */
+        val txFailed: Int = 0,
+        /** TX: 送信間隔 [秒] */
+        val txIntervalSec: Int = 0,
         val rssiLast: Int? = null,
         val rssiMin: Int? = null,
         val rssiAvg: Double? = null,

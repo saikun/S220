@@ -4,7 +4,7 @@ import android.location.Location
 import android.os.SystemClock
 
 /** ログ 1 行分の種別 */
-enum class EntryKind { RX, WARN, SYSTEM }
+enum class EntryKind { RX, TX, WARN, SYSTEM }
 
 /** 受信時点での位置のスナップショット */
 data class GeoFix(
@@ -41,7 +41,7 @@ data class GeoFix(
 
 /**
  * 画面・テキストログに出す 1 行。
- * 画面構成: ローカル時間｜受信したBody｜RSSI｜現在の位置情報
+ * 画面構成: ローカル時間｜受信（送信）したBody｜RSSI｜現在の位置情報
  */
 data class LogEntry(
     val id: Long,

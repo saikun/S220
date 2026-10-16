@@ -81,6 +81,10 @@ class LogAdapter : RecyclerView.Adapter<LogAdapter.Holder>() {
                     b.tvBody.text = if (e.terminated) e.body else "${e.body} (timeout)"
                     b.tvBody.setTextColor(ContextCompat.getColor(ctx, R.color.text_primary))
                 }
+                EntryKind.TX -> {
+                    b.tvBody.text = e.body
+                    b.tvBody.setTextColor(ContextCompat.getColor(ctx, R.color.accent))
+                }
                 EntryKind.WARN -> {
                     b.tvBody.text = "[WARN] ${e.body}"
                     b.tvBody.setTextColor(ContextCompat.getColor(ctx, R.color.warn))

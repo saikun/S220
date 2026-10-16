@@ -40,7 +40,7 @@ flowchart TB
     end
 
     subgraph SVC["サービス層"]
-        RXS["RxService<br/>(Foreground Service)"]
+        RXS["LoggerService<br/>(Foreground Service)"]
     end
 
     subgraph OUT["出力"]
@@ -52,7 +52,7 @@ flowchart TB
     end
 
     subgraph UI["UI 層"]
-        HUB["RxHub<br/>(singleton)"]
+        HUB["LoggerHub<br/>(singleton)"]
         ACT["MainActivity"]
         ADP["LogAdapter"]
     end
@@ -74,8 +74,8 @@ flowchart TB
 | --- | --- | --- |
 | 処理層 `core/` | Kotlin 標準ライブラリのみ | Android SDK、USB ライブラリ、UI |
 | I/O 層 `usb/`, `location/` | Android SDK / usb-serial-for-android | 処理層の内部、UI |
-| サービス層 `RxService` | 全層（組み立て役） | `MainActivity` を直接参照しない（`RxHub` 経由） |
-| UI 層 | `RxHub`, `model/`, `RssiScale` | `RxService` の内部状態（Intent でのみ操作） |
+| サービス層 `LoggerService` | 全層（組み立て役） | `MainActivity` を直接参照しない（`LoggerHub` 経由） |
+| UI 層 | `LoggerHub`, `model/`, `RssiScale` | `LoggerService` の内部状態（Intent でのみ操作） |
 
 処理層を純粋 Kotlin に保つことで、`src/test` の JVM 単体テストで端末なしに検証できます（[ADR-0003](adr/0003-port-layered-core-from-python.md)）。
 
@@ -85,8 +85,8 @@ flowchart TB
 | --- | --- | --- |
 | `MainActivity` | 権限要求、保存先選択ダイアログ、メニュー、ログ一覧表示、最新行の自動追従 | `ConsolePresenter`（表示部分） |
 | `LogAdapter` | 1 行 = 時刻 / Body / RSSI(+音名) / 位置 の描画、種別ごとの色分け、縞模様 | `ConsolePresenter.show_message` |
-| `RxHub` | Service と画面の橋渡し。直近 2000 行と `Status` を保持し、メインスレッドでリスナーへ通知 | （なし：Android 追加） |
-| `RxService` | セッション管理、USB 接続/再接続、受信結果の配信（CSV・GPX・音・画面・通知）、WakeLock | `main()` |
+| `LoggerHub` | Service と画面の橋渡し。直近 2000 行と `Status` を保持し、メインスレッドでリスナーへ通知 | （なし：Android 追加） |
+| `LoggerService` | セッション管理、USB 接続/再接続、受信結果の配信（CSV・GPX・音・画面・通知）、WakeLock | `main()` |
 | `usb/SerialReceiver` | 専用スレッドで `UsbSerialPort.read()` をループし `onBytes` / `onIdle` / `onError` を通知 | `SerialReceiver` |
 | `core/MessageProcessor` | バイト列 → `RxMessage` 変換の統括。RSSI モード時はパケット化してから行分割 | `MessageProcessor` |
 | `core/PacketAssembler` | UART 出力が `gapMs` 途切れたら 1 無線パケットとして確定 | `PacketAssembler` |
@@ -105,14 +105,14 @@ flowchart TB
 
 | スレッド | 生成元 | 実行される処理 |
 | --- | --- | --- |
-| **main** | Android | Activity のライフサイクル・描画、`RxHub` の状態更新とリスナー通知、Service の `onStartCommand`、USB ブロードキャスト受信、1 秒ティック（GPS 状態更新）、通知更新、`closePort()` |
-| **SerialReceiver** (`MAX_PRIORITY`, daemon) | `SerialReceiver.start()` | `port.read(buf, 50ms)` → `MessageProcessor.handleBytes/handleIdle` → `RxService.onRxMessage` → CSV / GPX 書き込み、音の要求、`RxHub.post*` |
+| **main** | Android | Activity のライフサイクル・描画、`LoggerHub` の状態更新とリスナー通知、Service の `onStartCommand`、USB ブロードキャスト受信、1 秒ティック（GPS 状態更新）、通知更新、`closePort()` |
+| **SerialReceiver** (`MAX_PRIORITY`, daemon) | `SerialReceiver.start()` | `port.read(buf, 50ms)` → `MessageProcessor.handleBytes/handleIdle` → `LoggerService.onRxMessage` → CSV / GPX 書き込み、音の要求、`LoggerHub.post*` |
 | **LocationTracker** (`HandlerThread`) | `LocationTracker.start()` | 位置更新コールバック → 軌跡 GPX 追記 |
 | **RssiTonePlayer** (daemon) | `RssiTonePlayer` 生成時 | キューから RSSI を取り出して `AudioTrack` で再生（約 180 ms ブロック） |
 
 スレッド間の取り決め:
 
-- **画面に関わる状態は必ずメインスレッドで変更する**。`RxHub.postEntry / updateStatus / clear` は呼び出しスレッドに関係なく `Handler(mainLooper)` へ post します。
+- **画面に関わる状態は必ずメインスレッドで変更する**。`LoggerHub.postEntry / updateStatus / clear` は呼び出しスレッドに関係なく `Handler(mainLooper)` へ post します。
 - `MessageProcessor` は内部バッファを `synchronized(lock)` で保護します。`handleBytes/handleIdle` は通常 SerialReceiver スレッドから、切断時の `handleIdle(force = true)` はメインスレッドから呼ばれるためです。`onMessage` は**ロックの外**で呼びます。
 - `TextLogWriter.write` / `GpxWriter.add*` は `@Synchronized`。受信スレッド・メインスレッド（システムメッセージ）・位置スレッドから同時に呼ばれ得るためです。
 - `RssiTonePlayer` は容量 1 のキューで、再生中に来た要求は**最新 1 件で上書き**します。受信が速くても音が溜まって遅れません。
@@ -127,10 +127,10 @@ sequenceDiagram
     autonumber
     participant SR as SerialReceiver<br/>(受信スレッド)
     participant MP as MessageProcessor
-    participant SV as RxService
+    participant SV as LoggerService
     participant LT as LocationTracker
     participant OUT as CSV / GPX / Tone
-    participant HUB as RxHub
+    participant HUB as LoggerHub
     participant UI as MainActivity<br/>(main)
 
     SR->>MP: handleBytes(buf, n)
@@ -174,14 +174,14 @@ RSSI モード（アプリでは常に有効）:
 | コールバック | 処理 |
 | --- | --- |
 | `onCreate` | View 構築 → 権限要求（位置、Android 13+ は通知）→ 結果に関わらず `checkAndStartLogging()` |
-| `checkAndStartLogging` | `RxHub.status.running` なら何もしない。停止中なら保存先選択ダイアログ → `RxService.start(logDir, soundOn = true)`。停止中はメニュー「記録を開始」からも呼ばれる |
-| `onStart` | `RxHub.addListener` → `RxHub.snapshot()` で一覧を復元 |
-| `onStop` | `RxHub.removeListener` |
+| `checkAndStartLogging` | `LoggerHub.status.running` なら何もしない。停止中なら保存先選択ダイアログ → `LoggerService.start(logDir, soundOn = true)`。停止中はメニュー「記録を開始」からも呼ばれる |
+| `onStart` | `LoggerHub.addListener` → `LoggerHub.snapshot()` で一覧を復元 |
+| `onStop` | `LoggerHub.removeListener` |
 
 `launchMode="singleTop"`。FT232RL 接続（`USB_DEVICE_ATTACHED`）でアプリが起動/前面化します。
-Activity が破棄されても受信はサービスで継続し、再表示時に `RxHub` の直近 2000 行から画面を復元します。
+Activity が破棄されても受信はサービスで継続し、再表示時に `LoggerHub` の直近 2000 行から画面を復元します。
 
-### 6.2 RxService の Intent
+### 6.2 LoggerService の Intent
 
 | Action | 送信元 | 処理 |
 | --- | --- | --- |
@@ -199,7 +199,7 @@ Activity が破棄されても受信はサービスで継続し、再表示時�
 
 1. `s220_logs` ディレクトリ作成、`rx_<yyyyMMdd_HHmmss>` で CSV / RSSI GPX / 軌跡 GPX を作成
 2. `MessageProcessor(rssiEnabled = true)` と `RssiTonePlayer` を生成
-3. `RxHub` をクリアし `Status(running = true, logDir, soundOn)` を設定、SYS 行「ログ開始」
+3. `LoggerHub` をクリアし `Status(running = true, logDir, soundOn)` を設定、SYS 行「ログ開始」
 4. 位置権限があれば `LocationTracker.start()`（失敗・GPS OFF は WARN 行）
 5. `PARTIAL_WAKE_LOCK` を取得（タイムアウト 24 時間。1 秒ティックで 1 時間ごとに取り直して延長）
 6. USB ブロードキャスト受信登録、1 秒ティック開始、`connectUsb()`

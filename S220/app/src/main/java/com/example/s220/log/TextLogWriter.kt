@@ -39,6 +39,7 @@ class TextLogWriter(val file: File) {
             timeFmt.format(Date(e.timeMillis)),
             when (e.kind) {
                 EntryKind.RX -> if (e.terminated) "RX" else "RX(timeout)"
+                EntryKind.TX -> "TX"
                 EntryKind.WARN -> "WARN"
                 EntryKind.SYSTEM -> "SYS"
             },

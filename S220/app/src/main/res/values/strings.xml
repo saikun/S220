@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">S220</string>
-    <string name="title_main">S220 RX Logger</string>
+    <string name="title_main">S220</string>
+    <string name="title_main_rx">S220 RX Logger</string>
+    <string name="title_main_tx">S220 TX Logger</string>
 
     <string name="col_time">TIME</string>
     <string name="col_body">BODY</string>
@@ -17,14 +19,24 @@
     <string name="rssi_none">---</string>
     <string name="follow_latest">最新へ</string>
     <string name="empty_hint">受信待機中…\nFT232RL + E220 を USB 接続してください</string>
+    <string name="empty_hint_tx">送信待機中…\nFT232RL + E220 を USB 接続してください</string>
 
     <string name="menu_start">記録を開始</string>
     <string name="menu_sound">音を鳴らす</string>
+    <string name="menu_interval">送信間隔</string>
     <string name="menu_keep_screen">画面を常にON</string>
     <string name="menu_reconnect">USB 再接続</string>
     <string name="menu_clear">画面をクリア</string>
     <string name="menu_files">保存先を表示</string>
     <string name="menu_stop">停止して終了</string>
+
+    <string name="mode_title">動作モードを選択</string>
+    <string name="mode_rx">受信（RX）\n受信データ・RSSI・位置を記録</string>
+    <string name="mode_tx">送信（TX）\n一定間隔でテストデータを送信</string>
+    <string name="interval_title">送信間隔を選択</string>
+    <string name="interval_item">%1$d 秒</string>
+    <string name="interval_item_default">%1$d 秒（既定）</string>
+    <string name="ok">OK</string>
 
     <string name="storage_title">ログの保存先を選択</string>
     <string name="storage_internal">端末（内部ストレージ）</string>

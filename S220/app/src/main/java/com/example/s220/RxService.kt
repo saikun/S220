@@ -19,6 +19,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -70,6 +71,9 @@ class RxService : Service() {
         private const val CHANNEL_ID = "rx_logger"
         private const val NOTIF_ID = 1
         private const val TICK_MS = 1000L
+        private const val WAKE_LOCK_TIMEOUT_MS = 24 * 60 * 60 * 1000L
+        /** この間隔で WakeLock を取り直し、タイムアウトを延長する（24 時間を超える連続記録への対応） */
+        private const val WAKE_LOCK_RENEW_MS = 60 * 60 * 1000L
 
         fun start(ctx: Context, logDir: File, soundOn: Boolean) {
             val i = Intent(ctx, RxService::class.java)
@@ -102,11 +106,13 @@ class RxService : Service() {
     @Volatile private var textLog: TextLogWriter? = null
     @Volatile private var rssiGpx: GpxWriter? = null
     @Volatile private var trackGpx: GpxWriter? = null
-    private var location: LocationTracker? = null
-    private var tone: RssiTonePlayer? = null
+    // 受信スレッドからも参照するため @Volatile
+    @Volatile private var location: LocationTracker? = null
+    @Volatile private var tone: RssiTonePlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var soundOn = true
     private var lastNotifyAt = 0L
+    private var wakeLockAcquiredAt = 0L
     private val entryId = AtomicLong(0)
 
     // =========================================================================
@@ -196,8 +202,9 @@ class RxService : Service() {
         wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "S220:rx").apply {
                 setReferenceCounted(false)
-                acquire(24 * 60 * 60 * 1000L)
+                acquire(WAKE_LOCK_TIMEOUT_MS)
             }
+        wakeLockAcquiredAt = SystemClock.elapsedRealtime()
 
         registerUsbReceivers()
         main.post(tick)
@@ -423,8 +430,18 @@ class RxService : Service() {
                 }
             }
             RxHub.updateStatus { it.copy(gpsOk = ok, gpsText = text, gpxPoints = rssiGpx?.count ?: 0) }
+            renewWakeLockIfNeeded()
             main.postDelayed(this, TICK_MS)
         }
+    }
+
+    /** 参照カウントなしの WakeLock は acquire し直すとタイムアウトが延長される */
+    private fun renewWakeLockIfNeeded() {
+        val wl = wakeLock ?: return
+        val now = SystemClock.elapsedRealtime()
+        if (now - wakeLockAcquiredAt < WAKE_LOCK_RENEW_MS) return
+        wl.acquire(WAKE_LOCK_TIMEOUT_MS)
+        wakeLockAcquiredAt = now
     }
 
     // =========================================================================

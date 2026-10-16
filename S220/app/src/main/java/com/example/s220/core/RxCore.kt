@@ -329,10 +329,9 @@ class MessageProcessor(
                 val packet = packets.flushIfIdle(force)
                 if (packet != null) {
                     val (payload, rssi) = splitRssi(packet)
-                    if (rssi != null) {
-                        lastRssi = rssi
-                        stats.updateRssi(rssi)
-                    }
+                    // RSSI を分離できなかったパケットに、前回パケットの RSSI を付けないようにする
+                    lastRssi = rssi
+                    if (rssi != null) stats.updateRssi(rssi)
                     framer.feed(payload)
                 } else {
                     emptyList()

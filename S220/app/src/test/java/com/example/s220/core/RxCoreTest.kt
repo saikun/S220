@@ -91,6 +91,41 @@ class RxCoreTest {
     }
 
     @Test
+    fun testMessageProcessorRssiMode() {
+        var t = 0L
+        val received = ArrayList<RxMessage>()
+        val proc = MessageProcessor(
+            onMessage = { received.add(it) },
+            rssiEnabled = true,
+            packetGapMs = 200L,
+            clock = { t },
+        )
+        val rssiByte = (256 - 75).toByte() // -75dBm
+
+        // 1. テキスト + RSSI バイトが分割して届き、200ms 途切れたら 1 パケットとして確定
+        proc.handleBytes("SEQ=1,MSG=a".toByteArray(Charsets.UTF_8))
+        t += 10
+        proc.handleBytes("\n".toByteArray(Charsets.UTF_8) + byteArrayOf(rssiByte))
+        t += 100
+        proc.handleIdle()
+        assertEquals(0, received.size) // まだ途切れていない
+        t += 150
+        proc.handleIdle()
+        assertEquals(1, received.size)
+        assertEquals("SEQ=1,MSG=a", received[0].text)
+        assertEquals(-75, received[0].rssiDbm)
+
+        // 2. RSSI バイトの付いていないパケットには、前回の RSSI を引き継がない
+        proc.handleBytes("SEQ=3,MSG=b\n".toByteArray(Charsets.UTF_8))
+        t += 300
+        proc.handleIdle()
+        assertEquals(2, received.size)
+        assertNull(received[1].rssiDbm)
+        assertEquals(1, received[1].lostBefore) // SEQ=2 が欠落
+        assertEquals(1, proc.stats.rssiCount)
+    }
+
+    @Test
     fun testRssiScale() {
         // -115 dBm は最小音階
         val minIdx = RssiScale.noteIndex(-120)

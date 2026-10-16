@@ -114,12 +114,17 @@ class MainActivity : AppCompatActivity(), RxHub.Listener {
         popup.menuInflater.inflate(R.menu.main_menu, popup.menu)
         val st = RxHub.status
 
+        popup.menu.findItem(R.id.menu_start)?.isVisible = !st.running
         popup.menu.findItem(R.id.menu_sound)?.isChecked = st.soundOn
         val isKeepScreen = (window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0
         popup.menu.findItem(R.id.menu_keep_screen)?.isChecked = isKeepScreen
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.menu_start -> {
+                    checkAndStartLogging()
+                    true
+                }
                 R.id.menu_sound -> {
                     val next = !st.soundOn
                     RxService.send(this, RxService.ACTION_SET_SOUND) {
@@ -201,24 +206,23 @@ class MainActivity : AppCompatActivity(), RxHub.Listener {
         showingStorageDialog = true
 
         val dirs = ContextCompat.getExternalFilesDirs(this, null)
-        val internalDir = dirs.getOrNull(0)
+        // 共有ストレージが使えない場合はアプリ専用領域にフォールバック（選択肢が 0 にならないように）
+        val internalDir = dirs.getOrNull(0) ?: filesDir
         val sdcardDir = dirs.getOrNull(1)
 
         val options = mutableListOf<String>()
-        val targetDirs = mutableListOf<File>()
+        val targetDirs = mutableListOf<File?>() // null = 選択不可（SDカード未挿入）
 
-        if (internalDir != null) {
-            options.add(getString(R.string.storage_internal) + "\n(" + internalDir.absolutePath + ")")
-            targetDirs.add(internalDir)
-        }
+        options.add(getString(R.string.storage_internal) + "\n(" + internalDir.absolutePath + ")")
+        targetDirs.add(internalDir)
 
         if (sdcardDir != null && Environment.isExternalStorageRemovable(sdcardDir)) {
             options.add(getString(R.string.storage_sd) + "\n(" + sdcardDir.absolutePath + ")")
             targetDirs.add(sdcardDir)
         } else {
-            // SDカード未挿入
+            // SDカード未挿入（選んでも端末内部へ黙って保存しないよう、選択不可として扱う）
             options.add(getString(R.string.storage_sd_missing))
-            targetDirs.add(internalDir ?: filesDir)
+            targetDirs.add(null)
         }
 
         AlertDialog.Builder(this)
@@ -227,6 +231,11 @@ class MainActivity : AppCompatActivity(), RxHub.Listener {
             .setItems(options.toTypedArray()) { _, which ->
                 showingStorageDialog = false
                 val selected = targetDirs[which]
+                if (selected == null) {
+                    Toast.makeText(this, R.string.storage_sd_missing_toast, Toast.LENGTH_LONG).show()
+                    showStoragePickerDialog()
+                    return@setItems
+                }
                 val logDir = File(selected, "s220_logs")
                 RxService.start(this, logDir, soundOn = true)
             }

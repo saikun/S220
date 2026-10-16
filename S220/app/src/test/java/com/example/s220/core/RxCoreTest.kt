@@ -60,6 +60,14 @@ class RxCoreTest {
         val (payload3, rssi3) = splitRssi(packetWithCrLfAndRssi)
         assertEquals("SEQ=1,MSG=hello\r\n", String(payload3, Charsets.UTF_8))
         assertEquals(-75, rssi3)
+
+        // 5. 改行の直後でも値域外のバイトは RSSI としない (0x00 - 256 = -256dBm への誤認防止)
+        val packetNlZero = "SEQ=1,MSG=hello\n".toByteArray(Charsets.UTF_8) + byteArrayOf(0x00)
+        assertNull(splitRssi(packetNlZero).second)
+
+        // 6. 改行 + RSSI + 余分な 0x00 の場合も、0x00 を RSSI としない
+        val packetNlRssiZero = "SEQ=1,MSG=hello\n".toByteArray(Charsets.UTF_8) + byteArrayOf(rssiByte, 0x00)
+        assertNull(splitRssi(packetNlRssiZero).second)
     }
 
     @Test

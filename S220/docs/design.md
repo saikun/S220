@@ -292,9 +292,8 @@ Android 依存部分（Service・USB・GPS・GPX/CSV 出力・音）は自動テ
 | 9 | `targetSdk 33` | `targetSdk 34` 以上に上げる場合、位置権限がないときに `startForeground` を type 0 で呼ぶ処理と FGS タイプ宣言の見直しが必要 | `connectedDevice` タイプ併用の検討 |
 | 10 | 「画面をクリア」は画面上の一覧のみ消去 | 統計（RX 件数・欠落・RSSI）とファイルはリセットされない | 仕様として明記済み |
 | 11 | 1024 byte 上限で強制確定した行も `terminated = true` 扱い | 改行なしで 1024 byte 溜まった行に `(timeout)` が付かない | `LineFramer.feed` で終端種別を返す |
-| 12 | `splitRssi` の「末尾から 2〜3 番目が改行」判定は値域を見ない | RSSI バイトが付かないパケットで、改行の後に 1〜2 byte だけ続くと末尾 1 byte を誤って RSSI とする（RSSI 付きなら値域判定だけで足りる） | 値域判定に一本化 |
-| 13 | PC 版 `rx_app.py` とパケット境界（80 ms / 200 ms）・RSSI 分離ロジックが異なる | PC と Android で同じ受信データの解釈が変わり得る | PC 版を Android 版にそろえる |
-| 14 | CSV の `local_time` にタイムゾーンがない（GPX は UTC） | 端末のタイムゾーンを変えると突き合わせに注意が必要 | オフセット付きにする（CSV 形式の変更になる） |
+| 12 | PC 版 `rx_app.py` とパケット境界（80 ms / 200 ms）・RSSI 分離ロジックが異なる | PC と Android で同じ受信データの解釈が変わり得る | PC 版を Android 版にそろえる |
+| 13 | CSV の `local_time` にタイムゾーンがない（GPX は UTC） | 端末のタイムゾーンを変えると突き合わせに注意が必要 | オフセット付きにする（CSV 形式の変更になる） |
 
 ### 11.1 対応済み（2026-10-16）
 
@@ -306,3 +305,4 @@ Android 依存部分（Service・USB・GPS・GPX/CSV 出力・音）は自動テ
 | 「SDカード（未挿入）」を選ぶと黙って端末内部に保存していた | 選んだ場合はトーストで知らせ、保存先ダイアログを出し直す |
 | 受信スレッドから参照する `location` / `tone` が `@Volatile` でなかった | `@Volatile` を付与 |
 | `RssiScale` の KDoc で最低音の境界が実装（−111 dBm 以下）と食い違っていた | KDoc を修正 |
+| `splitRssi` の「末尾から 2〜3 番目が改行」判定が値域を見ず、改行の後の 0x00 を −256 dBm と表示していた | 改行終端以外は値域判定（−150〜0 dBm）に一本化。`RxCoreTest.testSplitRssi` にケースを追加 |

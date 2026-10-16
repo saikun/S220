@@ -131,12 +131,11 @@ class PacketAssembler(
  *    （10 - 256 = -246 dBm に化けるのを確実に防止）
  *    → RSSI は null とし、パケット全体をペイロードとして返す。
  *
- * 2. 末尾から2番目（または3番目）が '\n' または '\r' の場合:
- *    ペイロード(\n含む) + RSSI 1byte の構成。
+ * 2. 末尾バイト - 256 が妥当な LoRa RSSI 範囲 (-150 〜 0 dBm) であれば RSSI とみなす。
  *    → 末尾1バイトを取り出して RSSI (byte - 256) を計算し、残りをペイロードとする。
+ *    改行の直後でも値域は必ず確認する（末尾 0x00 を -256 dBm と誤認しないため）。
  *
- * 3. 改行コードを含まないバイナリデータ等の場合:
- *    末尾バイト - 256 が妥当な LoRa RSSI 範囲 (-150 〜 0 dBm) であれば RSSI とみなす。
+ * 3. それ以外は RSSI なしとして、パケット全体をペイロードとして返す。
  */
 fun splitRssi(packet: ByteArray): Pair<ByteArray, Int?> {
     if (packet.isEmpty()) return ByteArray(0) to null
@@ -148,31 +147,18 @@ fun splitRssi(packet: ByteArray): Pair<ByteArray, Int?> {
         return packet to null
     }
 
-    // 2. 末尾の直前が改行コード ('\n' or '\r') の場合
-    if (packet.size >= 2) {
-        val prevByte = packet[packet.size - 2].toInt() and 0xFF
-        if (prevByte == 0x0A || prevByte == 0x0D) {
-            val rssi = lastByte - 256
-            return packet.copyOfRange(0, packet.size - 1) to rssi
-        }
-    }
-    if (packet.size >= 3) {
-        val prev2Byte = packet[packet.size - 3].toInt() and 0xFF
-        if (prev2Byte == 0x0A || prev2Byte == 0x0D) {
-            val rssi = lastByte - 256
-            return packet.copyOfRange(0, packet.size - 1) to rssi
-        }
-    }
-
-    // 3. 一般パケット: 末尾が妥当な RSSI 範囲 (-150 〜 0 dBm, byte値 106〜255) かどうか
+    // 2. 末尾が妥当な RSSI 範囲 (-150 〜 0 dBm, byte値 106〜255) かどうか
     val candidateRssi = lastByte - 256
-    if (candidateRssi in -150..0) {
+    if (candidateRssi in RSSI_VALID_DBM) {
         return packet.copyOfRange(0, packet.size - 1) to candidateRssi
     }
 
-    // RSSI とみなせない場合はそのまま返す
+    // 3. RSSI とみなせない場合はそのまま返す
     return packet to null
 }
+
+/** RSSI バイトとして受け付ける値域 [dBm]（LoRa の実用的な受信感度の範囲） */
+private val RSSI_VALID_DBM = -150..0
 
 /**
  * 断片化したバイト列を改行区切りのフレームへ組み立てる。
